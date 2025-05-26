@@ -1,0 +1,56 @@
+{
+  "Pawn": {
+    "Name": "Pawn",
+    "HP": 50,
+    "ATK": 150,
+    "DEF": 100,
+    "Mana": 3,
+    "EXP": 5,
+    "Special": ""
+  },
+  "Bishop": {
+    "Name": "Bishop",
+    "HP": 100,
+    "ATK": 200,
+    "DEF": 150,
+    "Mana": 4,
+    "EXP": 10,
+    "Special": ""
+  },
+  "Rook": {
+    "Name": "Rook",
+    "HP": 250,
+    "ATK": 200,
+    "DEF": 200,
+    "Mana": 5,
+    "EXP": 25,
+    "Special": ""
+  },
+  "Knight": {
+    "Name": "Knight",
+    "HP": 200,
+    "ATK": 300,
+    "DEF": 150,
+    "Mana": 5,
+    "EXP": 25,
+    "Special": ""
+  },
+  "Prince": {
+    "Name": "Prince",
+    "HP": 0,
+    "ATK": 0,
+    "DEF": 0,
+    "Mana": 6,
+    "EXP": 50,
+    "Special": ""
+  },
+  "Queen": {
+    "Name": "Queen",
+    "HP": 0,
+    "ATK": 0,
+    "DEF": 0,
+    "Mana": 5,
+    "EXP": 30,
+    "Special": "heal"
+  }
+}

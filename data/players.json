@@ -1,0 +1,10 @@
+{
+  "alice": {
+    "exp": 210,
+    "password": "qwe"
+  },
+  "bob": {
+    "exp": 110,
+    "password": "qwe"
+  }
+}

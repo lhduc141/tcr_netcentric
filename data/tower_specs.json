@@ -1,0 +1,18 @@
+{
+  "KingTower": {
+    "Name": "King Tower",
+    "HP": 2000,
+    "ATK": 500,
+    "DEF": 300,
+    "CRIT": 0.1,
+    "EXPValue": 200
+  },
+  "GuardTower": {
+    "Name": "Guard Tower",
+    "HP": 1000,
+    "ATK": 300,
+    "DEF": 100,
+    "CRIT": 0.05,
+    "EXPValue": 100
+  }
+}

@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"tcr_netcentric/server"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	server.Main()
 }
