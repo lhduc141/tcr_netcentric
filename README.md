@@ -1,4 +1,4 @@
-=======================================
+
 Technical Documentation - Tower Clash Royale (TCR) Server
 =======================================
 
