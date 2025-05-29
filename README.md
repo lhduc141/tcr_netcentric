@@ -154,22 +154,5 @@ Server sends prompts, feedback, and game event messages as plain text.
 3. Run clients: go run client.go
 4. Follow command prompts to play.
 
----------------------------------------
-
-10. Code Structure Summary
-
-tcr_netcentric/
-├── data/
-│   ├── players.json
-│   ├── troop_specs.json
-│   └── tower_specs.json
-├── models/
-│   ├── troops.go
-│   └── tower.go
-├── utils/
-│   ├── battle.go
-│   └── loader.go
-├── server.go
-└── client.go
 
 =======================================
