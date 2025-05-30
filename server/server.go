@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
 	"tcr_netcentric/models"
 	"tcr_netcentric/utils"
+	"time"
 )
 
 type Player struct {
@@ -32,7 +31,6 @@ var currentTurn int
 var commands [2]string
 
 func Main() {
-	//Open connection
 	ln, err := net.Listen("tcp", ":9000")
 	if err != nil {
 		log.Fatalf("Cannot listen: %v", err)
@@ -51,7 +49,6 @@ func Main() {
 		utils.SendMessage(conn, "🔐 Password: ")
 		password := utils.ReadFromConn(conn)
 
-		//Check authenticaition
 		if !utils.Authenticate(username, password) {
 			utils.SendMessage(conn, "Authentication failed.\n")
 			conn.Close()
@@ -84,7 +81,6 @@ func Main() {
 		*playerTowers[i][1] = loadedTowers["GuardTower"]
 		*playerTowers[i][2] = loadedTowers["KingTower"]
 
-		//Level system - scale
 		level := players[i].Level
 		scaleTowerStats(playerTowers[i][0], level)
 		scaleTowerStats(playerTowers[i][1], level)
@@ -232,6 +228,7 @@ func handleCommand(playerIndex int, input string) bool {
 		troopInstance.Lane = lane + 1
 		troopInstance.TimeToTarget = 5 * time.Second
 		troopInstance.Alive = true
+		troopInstance.Mode = mode
 
 		p.Troops[lane] = append(p.Troops[lane], &troopInstance)
 		p.Mana -= troop.Mana
@@ -249,27 +246,6 @@ func handleCommand(playerIndex int, input string) bool {
 	}
 }
 
-func applyTowerAttackOnTroop(tower *models.Tower, troop *models.Troop, owner *Player) {
-	damage := tower.ATK - troop.DEF
-	if damage < 0 {
-		damage = 0
-	}
-	originalHP := troop.HP
-	troop.HP -= damage
-	broadcast(fmt.Sprintf("🏰 Tower attacked %s's %s ➤ HP: %d→%d", troop.Owner, troop.Name, originalHP, troop.HP))
-
-	if troop.HP <= 0 {
-		troop.HP = 0
-		broadcast(fmt.Sprintf("💀 %s's %s was defeated by tower attack", troop.Owner, troop.Name))
-		for i, t := range owner.Troops[troop.Lane-1] {
-			if t == troop {
-				owner.Troops[troop.Lane-1] = append(owner.Troops[troop.Lane-1][:i], owner.Troops[troop.Lane-1][i+1:]...)
-				break
-			}
-		}
-	}
-}
-
 func resolveLaneCombat(lane int) {
 	p1 := players[0]
 	p2 := players[1]
@@ -282,7 +258,6 @@ func resolveLaneCombat(lane int) {
 		t1 := troops1[0]
 		t2 := troops2[0]
 
-		// troops đánh nhau
 		t1.HP -= t2.ATK
 		t2.HP -= t1.ATK
 
@@ -298,6 +273,7 @@ func resolveLaneCombat(lane int) {
 			broadcast(fmt.Sprintf("💀 %s's %s was defeated in lane %d", t2.Owner, t2.Name, lane+1))
 		}
 
+		//Which troops win
 		var winner *models.Troop
 		var loser *models.Troop
 		var winnerPlayer *Player
@@ -317,11 +293,10 @@ func resolveLaneCombat(lane int) {
 			targetTower = target2
 			defenderPlayer = p1
 		} else {
-			// Cả 2 cùng chết hoặc cùng sống -> dừng
-			return
+			return // Same troops => die both
 		}
 
-		// Troop thắng bị trừ HP do đòn hồi của troop thua (counter attack)
+		// Winner => lose HP
 		winner.HP -= loser.ATK
 		if winner.HP <= 0 {
 			broadcast(fmt.Sprintf("💀 %s's %s was defeated after counter attack in lane %d", winner.Owner, winner.Name, lane+1))
@@ -333,30 +308,35 @@ func resolveLaneCombat(lane int) {
 			return
 		}
 
-		// Troop thắng tiếp tục tấn công tower
-		applyDamageToTower(winner, targetTower, lane, winnerPlayer, defenderPlayer)
-
-		// Tower phản công troop thắng
-		applyTowerAttackOnTroop(targetTower, winner, winnerPlayer)
+		// Win troops atk tower => tower and troop lose HP
+		if winner.Mode == "attack" {
+			applyDamageToTower(winner, targetTower, lane, winnerPlayer, defenderPlayer)
+			applyTowerAttackOnTroop(targetTower, winner, winnerPlayer)
+		}
 		return
 	}
 
+	// Only player 1 sum troops
 	if len(troops1) > 0 && len(troops2) == 0 {
-		// troop p1 tấn công tower p2
-		applyDamageToTower(troops1[0], target1, lane, p1, p2)
-		applyTowerAttackOnTroop(target1, troops1[0], p1)
+		if troops1[0].Mode == "attack" {
+			applyDamageToTower(troops1[0], target1, lane, p1, p2)
+			applyTowerAttackOnTroop(target1, troops1[0], p1)
+		}
 		return
 	}
 
+	// Only player 2 sum troops
 	if len(troops2) > 0 && len(troops1) == 0 {
-		// troop p2 tấn công tower p1
-		applyDamageToTower(troops2[0], target2, lane, p2, p1)
-		applyTowerAttackOnTroop(target2, troops2[0], p2)
+		if troops2[0].Mode == "attack" {
+			applyDamageToTower(troops2[0], target2, lane, p2, p1)
+			applyTowerAttackOnTroop(target2, troops2[0], p2)
+		}
 		return
 	}
 }
 
 func applyDamageToTower(t *models.Troop, target *models.Tower, lane int, attacker *Player, defender *Player) {
+	//Destroy tower 1 before 2
 	if lane == 1 && !defender.DestroyedTowers[0] {
 		utils.SendMessage(attacker.Conn, "❌ You must destroy opponent's Guard Tower 1 before attacking Guard Tower 2.\n")
 		return
@@ -368,6 +348,7 @@ func applyDamageToTower(t *models.Troop, target *models.Tower, lane int, attacke
 		dmg = int(float64(dmg) * 1.2)
 		isCrit = true
 	}
+
 	originalDEF := target.DEF
 	originalHP := target.HP
 	if target.DEF > 0 {
@@ -407,6 +388,27 @@ func applyDamageToTower(t *models.Troop, target *models.Tower, lane int, attacke
 
 		attacker.Troops[lane] = []*models.Troop{}
 		defender.Troops[lane] = []*models.Troop{}
+	}
+}
+
+func applyTowerAttackOnTroop(tower *models.Tower, troop *models.Troop, owner *Player) {
+	damage := tower.ATK - troop.DEF
+	if damage < 0 {
+		damage = 0
+	}
+	originalHP := troop.HP
+	troop.HP -= damage
+	broadcast(fmt.Sprintf("🏰 Tower attacked %s's %s ➤ HP: %d→%d", troop.Owner, troop.Name, originalHP, troop.HP))
+
+	if troop.HP <= 0 {
+		troop.HP = 0
+		broadcast(fmt.Sprintf("💀 %s's %s was defeated by tower attack", troop.Owner, troop.Name))
+		for i, t := range owner.Troops[troop.Lane-1] {
+			if t == troop {
+				owner.Troops[troop.Lane-1] = append(owner.Troops[troop.Lane-1][:i], owner.Troops[troop.Lane-1][i+1:]...)
+				break
+			}
+		}
 	}
 }
 

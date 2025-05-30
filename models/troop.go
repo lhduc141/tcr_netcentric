@@ -14,4 +14,6 @@ type Troop struct {
 	TimeToTarget time.Duration
 	Owner        string
 	Alive        bool
+
+	Mode string
 }
